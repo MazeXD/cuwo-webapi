@@ -172,10 +172,8 @@ class CommandHandler (MultiHandler):
     def handle_kick(self, data):
         if not data or not isinstance(data, dict):
             return self.error(ERROR_INVALID_REQUEST)
-        if data['id'] is not None:
-            player = self.get_player(data['id'])
-        elif data['name'] is not None:
-            player = self.get_player(data['name'])
+        if data['player'] is not None:
+            player = self.get_player(data['player'])
         else:
             return self.error(ERROR_INVALID_REQUEST)
         player.kick()
@@ -184,10 +182,8 @@ class CommandHandler (MultiHandler):
     def handle_ban(self, data):
         if not data or not isinstance(data, dict):
             return self.error(ERROR_INVALID_REQUEST)
-        if data['id'] is not None:
-            player = self.get_player(data['id'])
-        elif data['name'] is not None:
-            player = self.get_player(data['name'])
+        if data['player'] is not None:
+            player = self.get_player(data['player'])
         else:
             return self.error(ERROR_INVALID_REQUEST)
         reason = data.get('reason', "No reason specified")
