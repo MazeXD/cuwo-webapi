@@ -1,4 +1,5 @@
 from twisted.internet.protocol import Protocol, Factory
+
 import json
 
 
@@ -6,17 +7,17 @@ class WebProtocol(Protocol):
     noisy = False
     authed = False
 
-    def __init__(self, factory, config, handler):
+    def __init__(self, factory):
         self.factory = factory
-        self.config = config
-        self.handler = handler
+        self.config = factory.config
+        self.handler = factory.handler
 
     def connectionMade(self):
         self.factory.connections.append(self)
 
     def dataReceived(self, data):
         if not self.authed:
-            if data not in self.config.keys:
+            if data not in self.config.get('keys', []):
                 self.disconnect()
                 return
             self.authed = True
@@ -40,4 +41,4 @@ class WebFactory(Factory):
         self.handler = handler
 
     def buildProtocol(self, addr):
-        return WebProtocol(self, self.config, self.handler)
+        return WebProtocol(self)
