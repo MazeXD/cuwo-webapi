@@ -1,5 +1,7 @@
-from webapi.common import generate_error, generate_success, log, fullname
-from webapi.constants import ERROR_INVALID_REQUEST, ERROR_SYSTEM
+from webapi.common import generate_error, generate_success, log, fullname, \
+    encode_player
+from webapi.constants import ERROR_INVALID_REQUEST, ERROR_INVALID_RESPONSE, \
+    ERROR_SYSTEM
 
 from twisted.python import log
 
@@ -116,3 +118,46 @@ class PingHandler (Handler):
 
     def handle(self, data):
         return self.success('pong')
+
+
+class PlayerHandler (Handler):
+    handles = ['get-players', 'get-player']
+
+    def get_player(self, attr):
+        if attr in self.server.players:
+            return encode_player(self.server.players[attr])
+        else:
+            return False
+
+    def get_players(self):
+        players = {}
+        for player in self.server.players.values():
+            players[player.entity_id] = encode_player(player)
+        return self.success(players)
+
+    def handle(self, data):
+        if self.handling == 'get-players':
+            result = self.get_players()
+        else:
+            if not data or not isinstance(data, basestring):
+                return self.error(ERROR_INVALID_REQUEST)
+            result = self.get_player(data)
+            if not result:
+                return self.error(ERROR_INVALID_REQUEST)
+        return self.success(result)
+
+
+class ChatHandler (Handler):
+    handles = 'send-message'
+
+    def send_message(self, message):
+        self.server.send_chat(message)
+        return True
+
+    def handle(self, data):
+        if not data or not isinstance(data, basestring):
+            return self.error(ERROR_INVALID_REQUEST)
+        if self.send_message(data):
+            return self.success()
+        else:
+            return self.error(ERROR_INVALID_RESPONSE)
