@@ -19,6 +19,7 @@ class RequestHandler (object):
         self.add(PingHandler)
         self.add(PlayerHandler)
         self.add(ChatHandler)
+        self.add(CommandHandler)
         # TODO get all handlers inside of this module automatically
         pass
 
@@ -152,7 +153,7 @@ class ChatHandler (Handler):
     accepts = 'send-message'
 
     def handle(self, data):
-        if not data or isinstance(data, dict):
+        if not data or not isinstance(data, dict):
             return self.error(ERROR_INVALID_REQUEST)
         message = data.get('message', None)
         name = data.get('player', None)
@@ -163,3 +164,32 @@ class ChatHandler (Handler):
             player.send_chat(message)
         else:
             self.server.send_chat(message)
+
+
+class CommandHandler (MultiHandler):
+    accepts = ['kick', 'ban']
+
+    def handle_kick(self, data):
+        if not data or not isinstance(data, dict):
+            return self.error(ERROR_INVALID_REQUEST)
+        if data['id'] is not None:
+            player = self.get_player(data['id'])
+        elif data['name'] is not None:
+            player = self.get_player(data['name'])
+        else:
+            return self.error(ERROR_INVALID_REQUEST)
+        player.kick()
+        return self.success()
+
+    def handle_ban(self, data):
+        if not data or not isinstance(data, dict):
+            return self.error(ERROR_INVALID_REQUEST)
+        if data['id'] is not None:
+            player = self.get_player(data['id'])
+        elif data['name'] is not None:
+            player = self.get_player(data['name'])
+        else:
+            return self.error(ERROR_INVALID_REQUEST)
+        reason = data.get('reason', "No reason specified")
+        self.server.call_scripts('ban', player.address.host, reason)
+        return self.success()
