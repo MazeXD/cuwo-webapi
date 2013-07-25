@@ -1,5 +1,12 @@
+import json
+
+
 class RequestHandler (object):
-    scripts = {}
+    handlers = {}
+
+    def __init__(self):
+        # TODO get all handlers inside this module
+        pass
 
     def add(self, handler):
         # TODO
@@ -7,7 +14,6 @@ class RequestHandler (object):
 
     def handle(self, request):
         response = None
-        # TODO
         return response
 
 

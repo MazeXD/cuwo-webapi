@@ -1,4 +1,8 @@
 from cuwo.script import ConnectionScript, ServerScript
+from .websocket import WebFactory
+from .handlers import RequestHandler
+from twisted.internet import reactor
+from txws import WebSocketFactory
 
 
 class WebAPIConnection (ConnectionScript):
@@ -10,11 +14,12 @@ class WebAPIServer (ServerScript):
 
     def on_load(self):
         self.config = self.server.config.webapi
-
-        # TODO instantiate RequestHandler
+        self.handler = RequestHandler()
 
         if self.config.get('enable_websocket', False):
-            # TODO load websocket
+            port = self.config.websocket_port
+            reactor.listenTCP(port, WebSocketFactory(WebFactory(self.config,
+                                                                self.handler)))
             pass
         if self.config.get('enable_http', False):
             # TODO load http
