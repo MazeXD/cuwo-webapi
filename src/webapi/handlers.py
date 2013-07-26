@@ -24,10 +24,22 @@ class RequestHandler (object):
         if not handles:
             log('Missing handles attribute for %s' % fullname(klass))
             return
-        if handles in self.handlers:
-            log('%s (%s) has already a handler' % (handles, fullname(klass)))
+        if isinstance(handles, basestring):
+            handles = handles.lower()
+            if handles in self.handlers:
+                log('%s (%s) has already a handler' % (
+                    handles, fullname(klass)))
+                return
+            self.handlers[handles] = klass
             return
-        self.handlers[handles] = klass
+        if isinstance(handles, list):
+            for handling in handles:
+                handling = handling.lower()
+                if handling in self.handlers:
+                    log('%s (%s) has already a handler' % (
+                        handling, fullname(klass)))
+                    continue
+                self.handlers[handling] = klass
 
     def parse(self, data):
         try:
@@ -49,10 +61,11 @@ class RequestHandler (object):
         if not key or not isinstance(key, basestring):
             return generate_error(ERROR_INVALID_REQUEST)
         handlers = self.handlers
+        key = key.lower()
         if key not in handlers:
             return generate_error(ERROR_INVALID_REQUEST, key)
         handler = handlers[key](self)
-        response = handler.handle(request.get('data', None))
+        response = handler._handle(key, request.get('data', None))
         if isinstance(response, basestring):
             return response
         if isinstance(response, dict):
@@ -69,10 +82,14 @@ class Handler (object):
         self.server = handler.server
 
     def error(self, error_code):
-        return generate_error(error_code, self.handles)
+        return generate_error(error_code, self.handling)
 
     def success(self, data=None):
-        return generate_success(self.handles, data)
+        return generate_success(self.handling, data)
+
+    def _handle(self, handling, data):
+        self.handling = handling
+        return self.handle(data)
 
     def handle(self, data):
         pass
