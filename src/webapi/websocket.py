@@ -25,6 +25,9 @@ class WebProtocol(Protocol):
             return
         self.send(self.handler.handle(data))
 
+    def send(self, data):
+        self.transport.write(data)
+
     def connectionLost(self, reason="No reason"):
         self.factory.connections.remove(self)
 

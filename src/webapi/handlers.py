@@ -50,7 +50,7 @@ class RequestHandler (object):
             result = {}
         return result
 
-    def handle(self, data, is_parsed=True):
+    def handle(self, data, is_parsed=False):
         if is_parsed:
             request = data
             if not isinstance(request, dict):
