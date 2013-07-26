@@ -1,6 +1,6 @@
-from twisted.internet.protocol import Protocol, Factory
+from webapi.constants import AUTH_RESPONSE
 
-import json
+from twisted.internet.protocol import Protocol, Factory
 
 
 class WebProtocol(Protocol):
@@ -17,11 +17,11 @@ class WebProtocol(Protocol):
 
     def dataReceived(self, data):
         if not self.authed:
-            if data not in self.config.get('keys', []):
+            if data not in self.config.get('auth_keys', []):
                 self.disconnect()
                 return
             self.authed = True
-            self.send(json.dumps({'response': 'success', 'request': 'auth'}))
+            self.send(AUTH_RESPONSE)
             return
         self.send(self.handler.handle(data))
 
