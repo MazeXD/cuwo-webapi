@@ -8,7 +8,8 @@ HTTP_PORT = 12351
 
 # error constants (common)
 ERROR_INVALID_REQUEST = -1
-ERROR_INVALID_RESPONSE = -2
+ERROR_SYSTEM = -2
+ERROR_INVALID_PLAYER = -3
 
 # error constants (http)
 ERROR_INVALID_METHOD = -20
