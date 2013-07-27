@@ -9,6 +9,7 @@ from twisted.python import log as logging
 
 import inspect
 import json
+import sys
 
 
 class InvalidRequest(Exception):
@@ -59,12 +60,14 @@ class RequestHandler (object):
 
     def __init__(self, webapi):
         self.server = webapi.server
-        self.add(PingHandler)
-        self.add(PlayerHandler)
-        self.add(ChatHandler)
-        self.add(CommandHandler)
-        # TODO get all handlers inside of this module automatically
-        pass
+        self._loadHandlers()
+
+    def _loadHandlers(self):
+        classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+        for (name, klass) in classes:
+            if issubclass(klass, Handler):
+                if klass is not Handler and klass is not MultiHandler:
+                    self.add(klass)
 
     def add(self, klass):
         if not inspect.isclass(klass):
