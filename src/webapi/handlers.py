@@ -11,6 +11,49 @@ import inspect
 import json
 
 
+class InvalidRequest(Exception):
+    pass
+
+
+def requires(*args):
+    def requires(func):
+        def new_func(self, data):
+            if data is None:
+                raise InvalidRequest()
+            if len(args) > 0:
+                if not isinstance(data, dict):
+                    raise InvalidRequest()
+                for arg in args:
+                    if arg not in data:
+                        raise InvalidRequest()
+            return func(self, data)
+        new_func.__module__ = func.__module__
+        new_func.func_name = func.func_name
+        return new_func
+    return requires
+
+
+def validate(arg=None, **kwargs):
+    def validate(func):
+        if len(kwargs) == 0 and not arg:
+            return func
+
+        def new_func(self, data):
+            if arg:
+                if not isinstance(data, arg):
+                    raise InvalidRequest()
+                return func(self, data)
+            for key in kwargs.keys():
+                if key in data:
+                    if not isinstance(data[key], kwargs[key]):
+                        raise InvalidRequest()
+            return func(self, data)
+        new_func.__module__ = func.__module__
+        new_func.func_name = func.func_name
+        return new_func
+    return validate
+
+
 class RequestHandler (object):
     handlers = {}
 
@@ -78,6 +121,8 @@ class RequestHandler (object):
             response = handler._handle_internal(key, request.get('data', None))
         except InvalidPlayer:
             return generate_error(ERROR_INVALID_PLAYER, key)
+        except InvalidRequest:
+            return generate_error(ERROR_INVALID_REQUEST, key)
         except:
             logging.err()
             return generate_error(ERROR_SYSTEM, key)
@@ -109,7 +154,14 @@ class Handler (object):
 
     def _handle_internal(self, accepted, data):
         self.accepted = accepted
-        return self.handle(data)
+        response = self.handle(data)
+        if isinstance(response, basestring):
+            try:
+                json.loads(response)
+                return response
+            except ValueError:
+                pass
+        return self.success(response)
 
     def handle(self, data):
         pass
@@ -122,22 +174,21 @@ class MultiHandler (Handler):
         if method is None:
             log('MultiHandler is missing %s handler method' % name)
             return self.error(ERROR_SYSTEM)
-        response = method(data)
-        if isinstance(response, basestring):
-            return response
-        return self.success(response)
+        return method(data)
 
 
 class PingHandler (Handler):
     accepts = 'ping'
 
     def handle(self, data):
-        return self.success('pong')
+        return 'pong'
 
 
 class PlayerHandler (MultiHandler):
     accepts = ['get-players', 'get-player']
 
+    @requires()
+    @validate(basestring)
     def handle_get_player(self, data):
         player = self.get_player(data)
         return encode_player(player, True)
@@ -152,13 +203,11 @@ class PlayerHandler (MultiHandler):
 class ChatHandler (Handler):
     accepts = 'send-message'
 
+    @requires('message')
+    @validate(message=basestring, player=basestring)
     def handle(self, data):
-        if not data or not isinstance(data, dict):
-            return self.error(ERROR_INVALID_REQUEST)
         message = data.get('message', None)
         name = data.get('player', None)
-        if not message or not isinstance(message, basestring):
-            return self.error(ERROR_INVALID_REQUEST)
         if name:
             player = self.get_player(name)
             player.send_chat(message)
@@ -169,23 +218,15 @@ class ChatHandler (Handler):
 class CommandHandler (MultiHandler):
     accepts = ['kick', 'ban']
 
+    @requires('player')
+    @validate(player=basestring)
     def handle_kick(self, data):
-        if not data or not isinstance(data, dict):
-            return self.error(ERROR_INVALID_REQUEST)
-        if data['player'] is not None:
-            player = self.get_player(data['player'])
-        else:
-            return self.error(ERROR_INVALID_REQUEST)
+        player = self.get_player(data['player'])
         player.kick()
-        return self.success()
 
+    @requires('player')
+    @validate(player=basestring, reason=basestring)
     def handle_ban(self, data):
-        if not data or not isinstance(data, dict):
-            return self.error(ERROR_INVALID_REQUEST)
-        if data['player'] is not None:
-            player = self.get_player(data['player'])
-        else:
-            return self.error(ERROR_INVALID_REQUEST)
+        player = self.get_player(data['player'])
         reason = data.get('reason', "No reason specified")
         self.server.call_scripts('ban', player.address.host, reason)
-        return self.success()
