@@ -67,7 +67,8 @@ def encode_item(item):
     return encoded
 
 
-def encode_player(player):
+def encode_player(connection, detailed=False):
+    player = connection.entity_data
     encoded = {
         'name': player.name,
         'level': player.level,
@@ -75,17 +76,19 @@ def encode_player(player):
         'class': player.class_type,
         'specialization': player.specialization
     }
-    skills = {
-        'pet-master': player.skills[0],
-        'riding': player.skills[1],
-        'climbing': player.skills[2],
-        'hang-gliding': player.skills[3],
-        'swimming': player.skills[4],
-        'sailing': player.skills[5],
-        'class-skill-1': player.skills[6],
-        'class-skill-2': player.skills[7],
-        'class-skill-3': player.skills[8]
-    }
-    encoded['skills'] = skills
-    encoded['equipment'] = [encode_item(item) for item in player.equipment]
+    if detailed:
+        skills = {
+            'pet-master': player.skills[0],
+            'riding': player.skills[1],
+            'climbing': player.skills[2],
+            'hang-gliding': player.skills[3],
+            'swimming': player.skills[4],
+            'sailing': player.skills[5],
+            'class-skill-1': player.skills[6],
+            'class-skill-2': player.skills[7],
+            'class-skill-3': player.skills[8]
+        }
+        encoded['entity-id'] = connection.entity_id
+        encoded['skills'] = skills
+        encoded['items'] = [encode_item(item) for item in player.equipment]
     return encoded

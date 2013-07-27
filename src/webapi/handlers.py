@@ -1,9 +1,11 @@
-from webapi.common import generate_error, generate_success, log, fullname, \
-    encode_player
-from webapi.constants import ERROR_INVALID_REQUEST, ERROR_INVALID_RESPONSE, \
-    ERROR_SYSTEM
+from webapi.common import (generate_error, generate_success, log, fullname,
+                           encode_player)
+from webapi.constants import (ERROR_INVALID_REQUEST, ERROR_SYSTEM,
+                              ERROR_INVALID_PLAYER)
 
-from twisted.python import log
+from cuwo.script import get_player, InvalidPlayer
+
+from twisted.python import log as logging
 
 import inspect
 import json
@@ -15,6 +17,8 @@ class RequestHandler (object):
     def __init__(self, webapi):
         self.server = webapi.server
         self.add(PingHandler)
+        self.add(PlayerHandler)
+        self.add(ChatHandler)
         # TODO get all handlers inside of this module automatically
         pass
 
@@ -71,8 +75,10 @@ class RequestHandler (object):
         handler = handlers[key](self)
         try:
             response = handler._handle_internal(key, request.get('data', None))
+        except InvalidPlayer:
+            return generate_error(ERROR_INVALID_PLAYER, key)
         except:
-            log.err()
+            logging.err()
             return generate_error(ERROR_SYSTEM, key)
         if isinstance(response, basestring):
             return response
@@ -95,6 +101,11 @@ class Handler (object):
     def success(self, data=None):
         return generate_success(self.accepted, data)
 
+    def get_player(self, name):
+        if not name or not isinstance(name, basestring):
+            raise InvalidPlayer()
+        return get_player(self.server, name)
+
     def _handle_internal(self, accepted, data):
         self.accepted = accepted
         return self.handle(data)
@@ -110,7 +121,10 @@ class MultiHandler (Handler):
         if method is None:
             log('MultiHandler is missing %s handler method' % name)
             return self.error(ERROR_SYSTEM)
-        return method(data)
+        response = method(data)
+        if isinstance(response, basestring):
+            return response
+        return self.success(response)
 
 
 class PingHandler (Handler):
@@ -120,44 +134,32 @@ class PingHandler (Handler):
         return self.success('pong')
 
 
-class PlayerHandler (Handler):
-    handles = ['get-players', 'get-player']
+class PlayerHandler (MultiHandler):
+    accepts = ['get-players', 'get-player']
 
-    def get_player(self, attr):
-        if attr in self.server.players:
-            return encode_player(self.server.players[attr])
-        else:
-            return False
+    def handle_get_player(self, data):
+        player = self.get_player(data)
+        return encode_player(player, True)
 
-    def get_players(self):
+    def handle_get_players(self, data):
         players = {}
         for player in self.server.players.values():
             players[player.entity_id] = encode_player(player)
-        return self.success(players)
-
-    def handle(self, data):
-        if self.handling == 'get-players':
-            result = self.get_players()
-        else:
-            if not data or not isinstance(data, basestring):
-                return self.error(ERROR_INVALID_REQUEST)
-            result = self.get_player(data)
-            if not result:
-                return self.error(ERROR_INVALID_REQUEST)
-        return self.success(result)
+        return players
 
 
 class ChatHandler (Handler):
-    handles = 'send-message'
-
-    def send_message(self, message):
-        self.server.send_chat(message)
-        return True
+    accepts = 'send-message'
 
     def handle(self, data):
-        if not data or not isinstance(data, basestring):
+        if not data or isinstance(data, dict):
             return self.error(ERROR_INVALID_REQUEST)
-        if self.send_message(data):
-            return self.success()
+        message = data.get('message', None)
+        name = data.get('player', None)
+        if not message or not isinstance(message, basestring):
+            return self.error(ERROR_INVALID_REQUEST)
+        if name:
+            player = self.get_player(name)
+            player.send_chat(message)
         else:
-            return self.error(ERROR_INVALID_RESPONSE)
+            self.server.send_chat(message)
