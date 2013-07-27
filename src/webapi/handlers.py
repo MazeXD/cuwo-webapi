@@ -10,6 +10,7 @@ from twisted.python import log as logging
 import inspect
 import json
 import sys
+import time
 
 
 class InvalidRequest(Exception):
@@ -216,6 +217,22 @@ class ChatHandler (Handler):
             player.send_chat(message)
         else:
             self.server.send_chat(message)
+
+
+class TimeHandler (MultiHandler):
+    accepts = ['get-time', 'set-time']
+
+    def handle_get_time(self, data):
+        return self.success(self.server.get_clock())
+
+    @requires()
+    @validate(basestring)
+    def handle_set_time(self, data):
+        try:
+            time.strptime(data, '%H:%M')
+            self.server.set_clock(data)
+        except ValueError:
+            raise InvalidRequest
 
 
 class CommandHandler (MultiHandler):
