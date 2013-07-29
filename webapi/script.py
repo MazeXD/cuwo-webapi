@@ -2,7 +2,7 @@ from cuwo.script import ConnectionScript, ServerScript
 
 from webapi.websocket import WebFactory
 from webapi.http import HTTP
-from webapi.handlers import RequestHandler
+from webapi.handler import RequestHandler
 from webapi.common import log
 from webapi.constants import WEBSOCKET_PORT, HTTP_PORT
 
