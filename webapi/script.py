@@ -25,14 +25,14 @@ class WebAPIServer (ServerScript):
 
         if self.config.get('enable_websocket', False):
             websocket_port = self.config.get('websocket_port', WEBSOCKET_PORT)
-            self.server.listen_tcp(websocket_port,
-                                   WebSocketFactory(
-                                       WebFactory(self.config,
-                                                  self.handler)))
+            self.websocket = WebSocketFactory(WebFactory(self.config,
+                                                         self.handler))
+            self.server.listen_tcp(websocket_port, self.websocket)
             log('WebAPI(WebSocket) is listening on %s' % websocket_port)
         if self.config.get('enable_http', False):
             http_port = self.config.get('http_port', HTTP_PORT)
-            self.server.listen_tcp(http_port, HTTP(self.config, self.handler))
+            self.http = HTTP(self.config, self.handler)
+            self.server.listen_tcp(http_port, self.http)
             log('WebAPI(HTTP) is listening on %s' % http_port)
 
 

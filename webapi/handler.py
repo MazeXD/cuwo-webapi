@@ -59,8 +59,9 @@ def validate(arg=None, **kwargs):
 class RequestHandler (object):
     handlers = {}
 
-    def __init__(self, webapi):
-        self.server = webapi.server
+    def __init__(self, script):
+        self.script = script
+        self.server = script.server
         self._loadHandlers()
 
     def _loadHandlers(self):
