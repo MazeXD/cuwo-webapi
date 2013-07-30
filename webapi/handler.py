@@ -189,6 +189,13 @@ class PingHandler (Handler):
         return 'pong'
 
 
+class ScriptHandler (MultiHandler):
+    accepts = ['get-scripts']
+
+    def handle_get_scripts(self, data):
+        return self.handler.script.script_data
+
+
 class PlayerHandler (MultiHandler):
     accepts = ['get-players', 'get-player']
 
