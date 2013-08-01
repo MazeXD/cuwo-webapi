@@ -39,13 +39,37 @@ def package(folder, name, print_files=False, *includes):
             print '  %s' % filename
 
 
+def move_file(src, dest):
+    filename = os.path.basename(src)
+    shutil.copyfile(src, "%s/%s" % (dest, filename))
+
+
+def get_git_rev(folder, long_form=False):
+    log_file = os.path.join(folder, '.git', 'logs', 'HEAD')
+    if not os.path.isfile(log_file):
+        return None
+    line = None
+    with open(log_file, 'rb') as f:
+        line = f.readlines()[-1]
+    rev = line.split(' ')[1]
+    if long_form:
+        return rev
+    return rev[:7]
+
+
 if __name__ == "__main__":
     filename = 'webapi'
+    git_rev = get_git_rev('.')
+    dist_name = filename
+    if git_rev:
+        dist_name += '-%s' % git_rev
     dist_folder = './dist'
     build_folder = './build'
     print 'Cleaning up'
     clean_up(build_folder)
     print 'Building Package:'
     build_package('%s/scripts' % build_folder, filename, True)
+    print 'Moving Bootstrap script'
+    move_file('webapi.py', '%s/scripts' % build_folder)
     print 'Packaging:'
-    package(dist_folder, filename, True, '%s/scripts' % build_folder, 'config')
+    package(dist_folder, dist_name, True, '%s/scripts' % build_folder, 'config')
