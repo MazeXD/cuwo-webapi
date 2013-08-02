@@ -3,14 +3,30 @@ from cuwo.script import ConnectionScript, ServerScript
 from webapi.websocket import WebFactory
 from webapi.http import HTTP
 from webapi.handler import RequestHandler
-from webapi.common import log
+from webapi.common import (log, generate_update, encode_player)
 from webapi.constants import VERSION, WEBSOCKET_PORT, HTTP_PORT
 
 from txws import WebSocketFactory
 
 
 class WebAPIConnection (ConnectionScript):
-    pass
+
+    def on_join(self, event):
+        data = encode_player(self.connection, True)
+        response = generate_update('on-join', data)
+        self.parent.websocket.broadcast(response)
+
+    def on_unload(self):
+        if not self.connection.has_joined:
+            return
+        data = {self.connection.entity_id}
+        response = generate_update('on-unload', data)
+        self.parent.websocket.broadcast(response)
+
+    def on_chat(self, event):
+        data = {'message': event.message, 'id': self.connection.entity_id}
+        response = generate_update('on-chat', data)
+        self.parent.websocket.broadcast(response)
 
 
 class WebAPIServer (ServerScript):
@@ -31,9 +47,9 @@ class WebAPIServer (ServerScript):
 
         if self.config.get('enable_websocket', False):
             websocket_port = self.config.get('websocket_port', WEBSOCKET_PORT)
-            self.websocket = WebSocketFactory(WebFactory(self.config,
-                                                         self.handler))
-            self.server.listen_tcp(websocket_port, self.websocket)
+            self.websocket = WebFactory(self.config, self.handler)
+            self.server.listen_tcp(websocket_port,
+                                   WebSocketFactory(self.websocket))
             log('WebAPI(WebSocket) is listening on %s' % websocket_port)
         if self.config.get('enable_http', False):
             http_port = self.config.get('http_port', HTTP_PORT)

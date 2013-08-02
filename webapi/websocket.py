@@ -6,6 +6,7 @@ from twisted.internet.protocol import Protocol, Factory
 class WebProtocol(Protocol):
     noisy = False
     authed = False
+    subscribed = []
 
     def __init__(self, factory):
         self.factory = factory
@@ -42,6 +43,10 @@ class WebFactory(Factory):
         self.connections = []
         self.config = config
         self.handler = handler
+
+    def broadcast(self, data):
+        for connection in self.connections:
+            connection.send(data)
 
     def buildProtocol(self, addr):
         return WebProtocol(self)

@@ -22,6 +22,17 @@ def generate_success(request, data=None):
     return json.dumps(result)
 
 
+def generate_update(request, data=None):
+    result = {
+        'response': 'update'
+    }
+    if data is not None:
+        result['data'] = data
+    if isinstance(request, basestring):
+        result['request'] = request
+    return json.dumps(result)
+
+
 def log(message):
     print '[WebAPI] %s' % message
 
@@ -88,7 +99,7 @@ def encode_player(connection, detailed=False):
             'class-skill-2': player.skills[7],
             'class-skill-3': player.skills[8]
         }
-        encoded['entity-id'] = connection.entity_id
         encoded['skills'] = skills
         encoded['items'] = [encode_item(item) for item in player.equipment]
+    encoded['entity-id'] = connection.entity_id
     return encoded
