@@ -266,5 +266,6 @@ class SubscribeHandler (Handler):
 
     @requires()
     @validate(list)
-    def handle_subscribe(self, data):
+    def handle(self, data):
+        data = [item.lower() for item in data if isinstance(item, basestring)]
         self.connection.subscribe(data)
