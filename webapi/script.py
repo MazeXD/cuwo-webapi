@@ -20,7 +20,7 @@ class WebAPIConnection (ConnectionScript):
         if not self.connection.has_joined:
             return
         data = {self.connection.entity_id}
-        response = generate_update('on-unload', data)
+        response = generate_update('on-leave', data)
         self.parent.websocket.broadcast(response)
 
     def on_chat(self, event):

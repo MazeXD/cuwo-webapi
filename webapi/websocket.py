@@ -24,7 +24,16 @@ class WebProtocol(Protocol):
             self.authed = True
             self.send(AUTH_RESPONSE)
             return
-        self.send(self.handler.handle(data))
+        if data['request'] == 'subscribe':
+            self.subscribe(data['data'])
+            return
+        else:
+            self.send(self.handler.handle(data))
+
+    def subscribe(self, data):
+        self.subscribed = []
+        for event in data:
+            self.subscribed.append(event)
 
     def send(self, data):
         self.transport.write(data)
@@ -46,7 +55,8 @@ class WebFactory(Factory):
 
     def broadcast(self, data):
         for connection in self.connections:
-            connection.send(data)
+            if data['request'] in connection.subscribed:
+                connection.send(data)
 
     def buildProtocol(self, addr):
         return WebProtocol(self)
