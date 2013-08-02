@@ -27,9 +27,7 @@ class WebProtocol(Protocol):
         self.send(self.handler.handle(self, data))
 
     def subscribe(self, data):
-        self.subscribed = []
-        for event in data:
-            self.subscribed.append(event)
+        self.subscribed = data
 
     def send(self, data):
         self.transport.write(data)
