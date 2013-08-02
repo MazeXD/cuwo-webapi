@@ -24,11 +24,7 @@ class WebProtocol(Protocol):
             self.authed = True
             self.send(AUTH_RESPONSE)
             return
-        if data['request'] == 'subscribe':
-            self.subscribe(data['data'])
-            return
-        else:
-            self.send(self.handler.handle(data))
+        self.send(self.handler.handle(self, data))
 
     def subscribe(self, data):
         self.subscribed = []

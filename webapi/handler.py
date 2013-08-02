@@ -107,7 +107,7 @@ class RequestHandler (object):
             result = {}
         return result
 
-    def handle(self, data, is_parsed=False):
+    def handle(self, connection, data, is_parsed=False):
         if is_parsed:
             request = data
             if not isinstance(request, dict):
@@ -123,7 +123,7 @@ class RequestHandler (object):
             return generate_error(ERROR_INVALID_REQUEST, key)
         handler = handlers[key](self)
         try:
-            response = handler._handle_internal(key, request.get('data', None))
+            response = handler._handle_internal(connection, key, request.get('data', None))
         except InvalidPlayer:
             return generate_error(ERROR_INVALID_PLAYER, key)
         except InvalidRequest:
@@ -157,7 +157,8 @@ class Handler (object):
             raise InvalidPlayer()
         return get_player(self.server, name)
 
-    def _handle_internal(self, accepted, data):
+    def _handle_internal(self, connection, accepted, data):
+        self.connection = connection
         self.accepted = accepted
         response = self.handle(data)
         if isinstance(response, basestring):
@@ -258,3 +259,12 @@ class CommandHandler (MultiHandler):
         player = self.get_player(data['player'])
         reason = data.get('reason', "No reason specified")
         self.server.call_scripts('ban', player.address.host, reason)
+
+
+class SubscribeHandler (Handler):
+    accepts = 'subscribe'
+
+    @requires()
+    @validate(basestring)
+    def handle(self, data):
+        self.connection.subscribe(data.lower())

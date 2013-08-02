@@ -29,7 +29,7 @@ def generate_update(request, data=None):
     if data is not None:
         result['data'] = data
     if isinstance(request, basestring):
-        result['request'] = request
+        result['request'] = request.lower()
     return json.dumps(result)
 
 

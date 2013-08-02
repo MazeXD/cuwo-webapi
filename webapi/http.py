@@ -23,6 +23,10 @@ class HTTPResource(Resource):
                 return True
         return False
 
+    def subscribe(self, data):
+        # TODO
+        pass
+
     def render(self, request):
         request.setHeader('Content-Type', 'application/json')
         request.setHeader('Server', 'WebAPI v%s' % VERSION)
@@ -33,7 +37,7 @@ class HTTPResource(Resource):
         data = self.handler.parse(request.content.getvalue())
         if not self._check_key(request):
             return generate_error(ERROR_INVALID_KEY, data.get('request', None))
-        return self.handler.handle(data, True)
+        return self.handler.handle(self, data, True)
 
 
 class HTTP(Site):
