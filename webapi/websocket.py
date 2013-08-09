@@ -17,6 +17,7 @@ class WebProtocol(Protocol):
         self.factory.connections.append(self)
 
     def dataReceived(self, data):
+        print(data)
         if not self.authed:
             if data not in self.config.get('auth_keys', []):
                 self.disconnect()
@@ -47,9 +48,9 @@ class WebFactory(Factory):
         self.config = config
         self.handler = handler
 
-    def broadcast(self, data):
+    def broadcast(self, data, event=False):
         for connection in self.connections:
-            if data['request'] in connection.subscribed:
+            if event in connection.subscribed or not event :
                 connection.send(data)
 
     def buildProtocol(self, addr):

@@ -14,19 +14,19 @@ class WebAPIConnection (ConnectionScript):
     def on_join(self, event):
         data = encode_player(self.connection, True)
         response = generate_update('on-join', data)
-        self.parent.websocket.broadcast(response)
+        self.parent.websocket.broadcast(response, event='on-join')
 
     def on_unload(self):
         if not self.connection.has_joined:
             return
         data = {self.connection.entity_id}
         response = generate_update('on-leave', data)
-        self.parent.websocket.broadcast(response)
+        self.parent.websocket.broadcast(response, event='on-leave')
 
     def on_chat(self, event):
         data = {'message': event.message, 'id': self.connection.entity_id}
         response = generate_update('on-chat', data)
-        self.parent.websocket.broadcast(response)
+        self.parent.websocket.broadcast(response, event='on-chat')
 
 
 class WebAPIServer (ServerScript):
