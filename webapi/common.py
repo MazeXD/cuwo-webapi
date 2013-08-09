@@ -102,4 +102,5 @@ def encode_player(connection, detailed=False):
         encoded['skills'] = skills
         encoded['items'] = [encode_item(item) for item in player.equipment]
     encoded['entity-id'] = connection.entity_id
+    encoded['ip'] = connection.address.host
     return encoded

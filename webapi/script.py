@@ -19,7 +19,7 @@ class WebAPIConnection (ConnectionScript):
     def on_unload(self):
         if not self.connection.has_joined:
             return
-        data = {self.connection.entity_id}
+        data = self.connection.entity_id
         response = generate_update('on-leave', data)
         self.parent.websocket.broadcast(response, event='on-leave')
 
